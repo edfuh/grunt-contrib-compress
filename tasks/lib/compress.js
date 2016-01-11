@@ -70,8 +70,21 @@ module.exports = function(grunt) {
             var compressedSize = exports.getSize(filePair.dest);
             var ratio = Math.round(parseInt(compressedSize) / parseInt(originalSize) * 100) + '%';
 
-            grunt.log.writeln('Created ' + chalk.cyan(filePair.dest) + ' (' + compressedSize + ') - ' + chalk.cyan(ratio) + ' of the original size');
-            nextFile();
+            function done () {
+              grunt.log.writeln('Created ' + chalk.cyan(filePair.dest) + ' (' + compressedSize + ') - ' + chalk.cyan(ratio) + ' of the original size');
+              nextFile();
+            }
+
+            var srcStr;
+            if ( filePair.appendExt ) {
+              srcStr = filePair.dest;
+              filePair.dest += '.' + extension;
+              fs.rename(srcStr, filePair.dest, function(){
+                done();
+              });
+            } else {
+              done();
+            }
           });
         }
 
@@ -84,11 +97,13 @@ module.exports = function(grunt) {
 
             destStream.write(this.getContents());
             destStream.end();
+
+
           });
         } else {
           init_destStream();
         }
- 
+
         var compressor = algorithm.call(zlib, exports.options);
 
         compressor.on('error', function(err) {
